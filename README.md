@@ -1,10 +1,10 @@
-# WORKFLOW-MACRO-TOOLS
+## WORKFLOW-MACRO-TOOLS
 
 Part of the [WORKFLOW-RS](https://github.com/workflow-rs) application framework.
 
 ***
 
-Functionality use by Workflow project macros.
+Functionality used by Workflow project macros.
 
 Currently includes:
 
