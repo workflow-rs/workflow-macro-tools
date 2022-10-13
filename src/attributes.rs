@@ -1,7 +1,8 @@
 
 use std::convert::Into;
 use proc_macro2::{Span, Ident, Group};
-use proc_macro2::{TokenStream as TokenStream2};
+// use proc_macro2::{TokenStream as TokenStream2};
+use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
     Attribute, LitBool, Lit, Error
@@ -12,6 +13,7 @@ use syn::{
     parse::{Parse, ParseStream},
 };
 use std::collections::HashMap;
+use crate::parse_error;
 
 #[derive(Debug, Clone)]
 pub struct IdentWraper(proc_macro2::Ident);
@@ -63,7 +65,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn to_token_stream(&self) -> TokenStream2 {
+    pub fn to_token_stream(&self) -> TokenStream {
         match self {
             Value::EvaluationValue(ev) => {
                 match ev {
@@ -103,6 +105,17 @@ impl Args {
         self.map.get(&ident)
     }
 
+    pub fn get_value_or<T: ToTokens>(&self, ident: &str, field : T, msg: &str) -> Result<Option<Value>,TokenStream> {
+        let v = self.get(ident);
+        match v {
+            None => Ok(None),
+            Some(v) => match v {
+                Some(v) => Ok(Some(v.clone())),
+                None => Err(parse_error(field, msg))
+            }
+        }
+    }
+
     pub fn to_string_kv(&self) -> Vec<(String,String)> {
         let mut list: Vec<(String,String)> = Vec::new();
         for (k,v) in self.map.iter() {
@@ -132,6 +145,21 @@ impl Args {
         }
 
         list
+    }
+
+    pub fn allow(&self, list : &[&str]) -> syn::Result<()> {
+
+        for (ident,_) in self.map.iter() {
+            let name = ident.to_string();
+            if !list.contains(&name.as_str()) {
+                return Err(Error::new_spanned(
+                    ident,
+                    format!("unsupported attribute: {}, supported attributes are {}", name, list.join(", "))
+                ));
+            }
+        }
+
+        Ok(())
     }
 }
 
